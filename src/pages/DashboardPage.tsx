@@ -1,0 +1,40 @@
+import type { FC } from 'react';
+import { LayoutDashboard } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Badge } from '../components/common';
+
+export const DashboardPage: FC = () => {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <h2 className="text-[22px] sm:text-[24px] font-semibold text-[#171717] tracking-tight">
+            Overview
+          </h2>
+          <Badge variant="secondary">Phase 2</Badge>
+        </div>
+        <p className="text-[13px] text-[#737373]">
+          This is the jobs dashboard placeholder.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <LayoutDashboard size={18} className="text-[#171717]" />
+            <CardTitle>Jobs Dashboard</CardTitle>
+          </div>
+          <CardDescription>
+            Pipeline metrics, recent job listings, and application tracking will be integrated in Phase 3.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="py-8 text-center text-[#737373] text-[13px] border border-dashed border-[#E5E5E5] rounded-md bg-[#FAFAFA]">
+            Dashboard view scheduled for subsequent phase implementation.
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default DashboardPage;
