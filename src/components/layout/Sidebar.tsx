@@ -109,3 +109,4 @@ export const Sidebar: FC<SidebarProps> = ({ onNavigate, className = '' }) => {
 };
 
 export default Sidebar;
+

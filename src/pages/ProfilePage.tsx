@@ -38,3 +38,4 @@ export const ProfilePage: FC = () => {
 };
 
 export default ProfilePage;
+

@@ -38,3 +38,4 @@ export const DashboardPage: FC = () => {
 };
 
 export default DashboardPage;
+

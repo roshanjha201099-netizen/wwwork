@@ -1,6 +1,13 @@
 import type { ComponentType } from 'react';
 import type { LucideProps } from 'lucide-react';
-import { LayoutDashboard, BriefcaseBusiness, UserRound, Layers } from 'lucide-react';
+import {
+  LayoutDashboard,
+  BriefcaseBusiness,
+  UserRound,
+  Layers,
+  LogIn,
+  UserPlus,
+} from 'lucide-react';
 
 export interface NavItem {
   label: string;
@@ -32,6 +39,16 @@ export const secondaryNavItems: NavItem[] = [
     href: '/design-preview',
     icon: Layers,
   },
+  {
+    label: 'Login UI',
+    href: '/login',
+    icon: LogIn,
+  },
+  {
+    label: 'Signup UI',
+    href: '/signup',
+    icon: UserPlus,
+  },
 ];
 
 export const routeTitles: Record<string, string> = {
@@ -39,14 +56,14 @@ export const routeTitles: Record<string, string> = {
   '/applications': 'My Applications',
   '/profile': 'Profile',
   '/design-preview': 'Design Preview',
+  '/login': 'Sign in',
+  '/signup': 'Create account',
 };
 
 export function getPageTitle(pathname: string): string {
-  // Direct match
   if (routeTitles[pathname]) {
     return routeTitles[pathname];
   }
-  // Fallback prefix match if subpaths appear later
   const matchedKey = Object.keys(routeTitles).find((key) => pathname.startsWith(key));
   if (matchedKey) {
     return routeTitles[matchedKey];

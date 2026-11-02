@@ -38,3 +38,4 @@ export const ApplicationsPage: FC = () => {
 };
 
 export default ApplicationsPage;
+
