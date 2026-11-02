@@ -9,3 +9,4 @@ export interface ApplicationContextType {
 }
 
 export const ApplicationContext = createContext<ApplicationContextType | undefined>(undefined);
+

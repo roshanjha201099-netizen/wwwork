@@ -20,3 +20,4 @@ export interface JobFiltersState {
   dateRange: DateFilterOption;
   experienceLevel: ExperienceLevel | 'all';
 }
+

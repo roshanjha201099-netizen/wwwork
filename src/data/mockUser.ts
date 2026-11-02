@@ -11,3 +11,4 @@ export const mockUser: MockUser = {
 };
 
 export default mockUser;
+

@@ -89,3 +89,4 @@ export const JobPagination: FC<JobPaginationProps> = ({
 };
 
 export default JobPagination;
+

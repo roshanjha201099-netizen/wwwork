@@ -118,3 +118,4 @@ export function useJobs(initialPageSize = DEFAULT_PAGE_SIZE) {
 }
 
 export default useJobs;
+

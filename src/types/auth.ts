@@ -7,3 +7,4 @@ export interface MockUser {
   role?: string;
   avatarInitials: string;
 }
+
