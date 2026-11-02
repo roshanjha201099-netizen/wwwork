@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout';
+import { ProtectedRoute } from '../components/auth';
 import {
   DashboardPage,
   ApplicationsPage,
@@ -16,35 +17,43 @@ export const AppRoutes: FC = () => {
       {/* Default route */}
       <Route path="/" element={<Navigate to="/design-preview" replace />} />
 
-      {/* Authentication routes (no sidebar or dashboard header) */}
+      {/* Authentication routes (independent, no sidebar/header) */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
 
-      {/* Internal application routes (with AppLayout shell) */}
+      {/* Protected application routes (wrapped in AppLayout & ProtectedRoute) */}
       <Route
         path="/dashboard"
         element={
-          <AppLayout>
-            <DashboardPage />
-          </AppLayout>
+          <ProtectedRoute>
+            <AppLayout>
+              <DashboardPage />
+            </AppLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/applications"
         element={
-          <AppLayout>
-            <ApplicationsPage />
-          </AppLayout>
+          <ProtectedRoute>
+            <AppLayout>
+              <ApplicationsPage />
+            </AppLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/profile"
         element={
-          <AppLayout>
-            <ProfilePage />
-          </AppLayout>
+          <ProtectedRoute>
+            <AppLayout>
+              <ProfilePage />
+            </AppLayout>
+          </ProtectedRoute>
         }
       />
+
+      {/* Public preview route */}
       <Route
         path="/design-preview"
         element={

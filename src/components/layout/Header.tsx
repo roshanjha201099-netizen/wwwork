@@ -2,6 +2,8 @@ import type { FC } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { getPageTitle } from './navConfig';
+import { useAppSelector } from '../../store/hooks';
+import { selectCurrentUser } from '../../store/selectors/authSelectors';
 import { mockUser } from '../../data/mockUser';
 
 export interface HeaderProps {
@@ -11,6 +13,8 @@ export interface HeaderProps {
 export const Header: FC<HeaderProps> = ({ onMenuClick }) => {
   const location = useLocation();
   const title = getPageTitle(location.pathname);
+  const reduxUser = useAppSelector(selectCurrentUser);
+  const user = reduxUser || mockUser;
 
   return (
     <header className="h-16 border-b border-[#E5E5E5] bg-[#FFFFFF] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shrink-0">
@@ -34,10 +38,10 @@ export const Header: FC<HeaderProps> = ({ onMenuClick }) => {
       {/* Right side avatar / initials */}
       <div className="flex items-center gap-2">
         <div
-          title={`${mockUser.name} (${mockUser.email})`}
+          title={`${user.name} (${user.email})`}
           className="w-8 h-8 rounded-md bg-[#171717] text-[#FFFFFF] flex items-center justify-center text-[12px] font-medium select-none cursor-default font-mono"
         >
-          {mockUser.avatarInitials}
+          {user.avatarInitials}
         </div>
       </div>
     </header>

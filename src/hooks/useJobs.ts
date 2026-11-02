@@ -1,29 +1,41 @@
-import { useState, useEffect, useCallback, useTransition } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import {
+  selectAllJobs,
+  selectTotalJobs,
+  selectCatalogTotalCount,
+  selectCurrentPage,
+  selectPageSize,
+  selectTotalPages,
+  selectJobFilters,
+  selectJobsLoading,
+  selectJobsError,
+  selectHasActiveFilters,
+} from '../store/selectors/jobsSelectors';
+import {
+  fetchJobs,
+  setFilters,
+  clearFilters as clearFiltersAction,
+  setCurrentPage as setCurrentPageAction,
+} from '../store/slices/jobsSlice';
 import { jobService } from '../services/jobService';
-import type { Job, JobFiltersState, DateFilterOption, ExperienceLevel } from '../types/job';
+import type { DateFilterOption, ExperienceLevel } from '../types/job';
 
-const DEFAULT_PAGE_SIZE = 10;
+export function useJobs(initialPageSize = 10) {
+  const dispatch = useAppDispatch();
 
-const initialFilters: JobFiltersState = {
-  search: '',
-  technologies: [],
-  dateRange: 'all',
-  experienceLevel: 'all',
-};
+  const jobs = useAppSelector(selectAllJobs);
+  const totalJobsCount = useAppSelector(selectTotalJobs);
+  const catalogTotalCount = useAppSelector(selectCatalogTotalCount);
+  const currentPage = useAppSelector(selectCurrentPage);
+  const pageSize = useAppSelector(selectPageSize) || initialPageSize;
+  const totalPages = useAppSelector(selectTotalPages);
+  const filters = useAppSelector(selectJobFilters);
+  const isLoading = useAppSelector(selectJobsLoading);
+  const error = useAppSelector(selectJobsError);
+  const hasActiveFilters = useAppSelector(selectHasActiveFilters);
 
-export function useJobs(initialPageSize = DEFAULT_PAGE_SIZE) {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [totalJobsCount, setTotalJobsCount] = useState<number>(0);
-  const [catalogTotalCount, setCatalogTotalCount] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
   const [availableTechnologies, setAvailableTechnologies] = useState<string[]>([]);
-
-  const [filters, setFilters] = useState<JobFiltersState>(initialFilters);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [, startTransition] = useTransition();
 
   // Load available technologies on mount via service
   useEffect(() => {
@@ -34,136 +46,76 @@ export function useJobs(initialPageSize = DEFAULT_PAGE_SIZE) {
         if (isMounted) setAvailableTechnologies(techs);
       })
       .catch(() => {
-        // Non-critical; fallback to empty list
+        // Fallback to empty list
       });
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // Fetch jobs whenever filters or pagination changes
+  // Fetch jobs on mount or whenever filters/pagination change
   useEffect(() => {
-    let isMounted = true;
+    dispatch(fetchJobs());
+  }, [dispatch, currentPage, filters]);
 
-    jobService
-      .getJobs({
-        page: currentPage,
-        pageSize: initialPageSize,
-        search: filters.search,
-        technologies: filters.technologies,
-        dateRange: filters.dateRange,
-        experienceLevel: filters.experienceLevel,
-      })
-      .then((response) => {
-        if (isMounted) {
-          startTransition(() => {
-            setJobs(response.jobs);
-            setTotalJobsCount(response.total);
-            setTotalPages(response.totalPages);
+  const setSearch = useCallback(
+    (search: string) => {
+      dispatch(setFilters({ search }));
+    },
+    [dispatch]
+  );
 
-            const hasFilters =
-              Boolean(filters.search.trim()) ||
-              filters.technologies.length > 0 ||
-              filters.dateRange !== 'all' ||
-              filters.experienceLevel !== 'all';
-
-            if (!hasFilters) {
-              setCatalogTotalCount(response.total);
-            }
-          });
-          setIsLoading(false);
-          setError(null);
-        }
-      })
-      .catch((err: unknown) => {
-        if (isMounted) {
-          const message = err instanceof Error ? err.message : 'Failed to fetch job opportunities.';
-          setError(message);
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentPage, initialPageSize, filters]);
-
-  const retry = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await jobService.getJobs({
-        page: currentPage,
-        pageSize: initialPageSize,
-        search: filters.search,
-        technologies: filters.technologies,
-        dateRange: filters.dateRange,
-        experienceLevel: filters.experienceLevel,
-      });
-      setJobs(response.jobs);
-      setTotalJobsCount(response.total);
-      setTotalPages(response.totalPages);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch job opportunities.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentPage, initialPageSize, filters]);
-
-  // Set search query and reset pagination to page 1
-  const setSearch = useCallback((search: string) => {
-    setFilters((prev) => ({ ...prev, search }));
-    setCurrentPage(1);
-  }, []);
-
-  // Toggle technology filter selection and reset pagination to page 1
-  const toggleTechnology = useCallback((tech: string) => {
-    setFilters((prev) => {
-      const exists = prev.technologies.includes(tech);
+  const toggleTechnology = useCallback(
+    (tech: string) => {
+      const exists = filters.technologies.includes(tech);
       const technologies = exists
-        ? prev.technologies.filter((t) => t !== tech)
-        : [...prev.technologies, tech];
-      return { ...prev, technologies };
-    });
-    setCurrentPage(1);
-  }, []);
+        ? filters.technologies.filter((t) => t !== tech)
+        : [...filters.technologies, tech];
+      dispatch(setFilters({ technologies }));
+    },
+    [dispatch, filters.technologies]
+  );
 
-  // Set date range and reset pagination to page 1
-  const setDateRange = useCallback((dateRange: DateFilterOption) => {
-    setFilters((prev) => ({ ...prev, dateRange }));
-    setCurrentPage(1);
-  }, []);
+  const setDateRange = useCallback(
+    (dateRange: DateFilterOption) => {
+      dispatch(setFilters({ dateRange }));
+    },
+    [dispatch]
+  );
 
-  // Set experience level and reset pagination to page 1
-  const setExperienceLevel = useCallback((experienceLevel: ExperienceLevel | 'all') => {
-    setFilters((prev) => ({ ...prev, experienceLevel }));
-    setCurrentPage(1);
-  }, []);
+  const setExperienceLevel = useCallback(
+    (experienceLevel: ExperienceLevel | 'all') => {
+      dispatch(setFilters({ experienceLevel }));
+    },
+    [dispatch]
+  );
 
-  // Clear all filters and reset pagination to page 1
   const clearFilters = useCallback(() => {
-    setFilters(initialFilters);
-    setCurrentPage(1);
-  }, []);
+    dispatch(clearFiltersAction());
+  }, [dispatch]);
 
-  // Page navigation
-  const goToPage = useCallback((page: number) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
-  }, [totalPages]);
+  const goToPage = useCallback(
+    (page: number) => {
+      dispatch(setCurrentPageAction(page));
+    },
+    [dispatch]
+  );
 
   const nextPage = useCallback(() => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-  }, [totalPages]);
+    if (currentPage < totalPages) {
+      dispatch(setCurrentPageAction(currentPage + 1));
+    }
+  }, [dispatch, currentPage, totalPages]);
 
   const prevPage = useCallback(() => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
-  }, []);
+    if (currentPage > 1) {
+      dispatch(setCurrentPageAction(currentPage - 1));
+    }
+  }, [dispatch, currentPage]);
 
-  const hasActiveFilters =
-    Boolean(filters.search.trim()) ||
-    filters.technologies.length > 0 ||
-    filters.dateRange !== 'all' ||
-    filters.experienceLevel !== 'all';
+  const retry = useCallback(() => {
+    dispatch(fetchJobs());
+  }, [dispatch]);
 
   return {
     jobs,
@@ -171,7 +123,7 @@ export function useJobs(initialPageSize = DEFAULT_PAGE_SIZE) {
     catalogTotalCount: catalogTotalCount || totalJobsCount,
     currentPage,
     totalPages,
-    pageSize: initialPageSize,
+    pageSize,
     filters,
     availableTechnologies,
     hasActiveFilters,

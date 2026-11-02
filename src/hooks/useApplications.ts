@@ -1,71 +1,99 @@
-import { useContext, useState, useEffect } from 'react';
-import { ApplicationContext, type ApplicationContextType } from '../context/applicationContextDef';
-import { applicationService } from '../services/applicationService';
+import { useEffect, useCallback } from 'react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import {
+  selectApplications,
+  selectAppliedJobIds,
+  selectAppliedCount,
+  selectApplicationsLoading,
+  selectApplicationsError,
+} from '../store/selectors/applicationSelectors';
+import { fetchApplications, applyJob, unapplyJob } from '../store/slices/applicationsSlice';
 import type { Job } from '../types/job';
 
-export function useApplications(): ApplicationContextType {
-  const context = useContext(ApplicationContext);
-  if (!context) {
-    throw new Error('useApplications must be used within an ApplicationProvider');
-  }
-  return context;
+export function useApplications() {
+  const dispatch = useAppDispatch();
+  const appliedJobIds = useAppSelector(selectAppliedJobIds);
+  const appliedCount = useAppSelector(selectAppliedCount);
+  const isLoading = useAppSelector(selectApplicationsLoading);
+  const error = useAppSelector(selectApplicationsError);
+
+  const applyToJob = useCallback(
+    async (jobOrId: Job | string) => {
+      const job: Job =
+        typeof jobOrId === 'string'
+          ? {
+              id: jobOrId,
+              position: 'Applied Role',
+              company: 'Company',
+              created_at: new Date().toISOString(),
+              tech_stack: [],
+              description: '',
+            }
+          : jobOrId;
+      await dispatch(applyJob(job)).unwrap();
+    },
+    [dispatch]
+  );
+
+  const removeApplication = useCallback(
+    async (jobId: string) => {
+      await dispatch(unapplyJob(jobId)).unwrap();
+    },
+    [dispatch]
+  );
+
+  const isApplied = useCallback(
+    (jobId: string) => {
+      return appliedJobIds.includes(jobId);
+    },
+    [appliedJobIds]
+  );
+
+  return {
+    appliedJobIds,
+    applyToJob,
+    removeApplication,
+    isApplied,
+    appliedCount,
+    isLoading,
+    error,
+    refreshApplications: () => dispatch(fetchApplications()),
+  };
 }
 
 /**
- * Hook to retrieve full Job records for all applied positions.
- * Decouples UI pages from data sources (mock vs backend API).
+ * Hook to retrieve full Job records for all applied positions backed by Redux.
  */
 export function useAppliedJobs() {
-  const { appliedJobIds, removeApplication, appliedCount, isLoading: isContextLoading } = useApplications();
-  const [appliedJobs, setAppliedJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const appliedJobs = useAppSelector(selectApplications);
+  const appliedJobIds = useAppSelector(selectAppliedJobIds);
+  const appliedCount = useAppSelector(selectAppliedCount);
+  const isLoading = useAppSelector(selectApplicationsLoading);
+  const error = useAppSelector(selectApplicationsError);
 
   useEffect(() => {
-    let isMounted = true;
-
-    applicationService
-      .getAppliedJobs()
-      .then((jobs) => {
-        if (isMounted) {
-          setAppliedJobs(jobs);
-          setIsLoading(false);
-        }
-      })
-      .catch((err: unknown) => {
-        if (isMounted) {
-          const message = err instanceof Error ? err.message : 'Failed to load applied jobs.';
-          setError(message);
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [appliedJobIds]);
-
-  const retry = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const jobs = await applicationService.getAppliedJobs();
-      setAppliedJobs(jobs);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load applied jobs.');
-    } finally {
-      setIsLoading(false);
+    // Initial fetch if empty
+    if (appliedJobs.length === 0 && appliedJobIds.length === 0) {
+      dispatch(fetchApplications());
     }
-  };
+  }, [dispatch, appliedJobs.length, appliedJobIds.length]);
+
+  const removeApp = useCallback(
+    async (jobId: string) => {
+      await dispatch(unapplyJob(jobId)).unwrap();
+    },
+    [dispatch]
+  );
 
   return {
     appliedJobs,
     appliedJobIds,
     appliedCount,
-    isLoading: isContextLoading || isLoading,
+    isLoading,
     error,
-    removeApplication,
-    retry,
+    removeApplication: removeApp,
+    retry: () => dispatch(fetchApplications()),
   };
 }
 

@@ -15,3 +15,4 @@ export interface ApplicationMutationResponse {
   jobId: string;
   message?: string;
 }
+

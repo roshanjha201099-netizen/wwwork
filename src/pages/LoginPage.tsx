@@ -1,18 +1,30 @@
 import { useState, type FC, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { Info } from 'lucide-react';
-import { authService } from '../services/authService';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { loginUser } from '../store/slices/authSlice';
+import { selectAuthLoading, selectIsAuthenticated } from '../store/selectors/authSelectors';
 import { AuthLayout, PasswordInput } from '../components/auth';
 import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common';
 
 export const LoginPage: FC = () => {
+  const dispatch = useAppDispatch();
+  const location = useLocation();
+  const isAuthLoading = useAppSelector(selectAuthLoading);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [touched, setTouched] = useState<{ email?: boolean; password?: boolean }>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [demoNotice, setDemoNotice] = useState<string | null>(null);
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+    return <Navigate to={from} replace />;
+  }
 
   const validateEmail = (val: string): string | undefined => {
     if (!val.trim()) {
@@ -70,16 +82,13 @@ export const LoginPage: FC = () => {
     }
 
     setErrors({});
-    setIsSubmitting(true);
     setDemoNotice(null);
 
     try {
-      await authService.login({ email, password });
+      await dispatch(loginUser({ email, password })).unwrap();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Authentication integration is coming soon.';
+      const message = typeof err === 'string' ? err : 'Authentication integration is coming soon.';
       setDemoNotice(message);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -112,7 +121,7 @@ export const LoginPage: FC = () => {
               onChange={(e) => handleEmailChange(e.target.value)}
               onBlur={() => handleBlur('email')}
               error={touched.email ? errors.email : undefined}
-              disabled={isSubmitting}
+              disabled={isAuthLoading}
               autoComplete="email"
             />
 
@@ -123,7 +132,7 @@ export const LoginPage: FC = () => {
               onChange={(e) => handlePasswordChange(e.target.value)}
               onBlur={() => handleBlur('password')}
               error={touched.password ? errors.password : undefined}
-              disabled={isSubmitting}
+              disabled={isAuthLoading}
               autoComplete="current-password"
             />
 
@@ -131,8 +140,8 @@ export const LoginPage: FC = () => {
               type="submit"
               variant="primary"
               className="w-full mt-2"
-              disabled={!isFormValid || isSubmitting}
-              isLoading={isSubmitting}
+              disabled={!isFormValid || isAuthLoading}
+              isLoading={isAuthLoading}
             >
               Sign in
             </Button>

@@ -1,11 +1,17 @@
 import { useState, type FC, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Info } from 'lucide-react';
-import { authService } from '../services/authService';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { signupUser } from '../store/slices/authSlice';
+import { selectAuthLoading, selectIsAuthenticated } from '../store/selectors/authSelectors';
 import { AuthLayout, PasswordInput } from '../components/auth';
 import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common';
 
 export const SignupPage: FC = () => {
+  const dispatch = useAppDispatch();
+  const isAuthLoading = useAppSelector(selectAuthLoading);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,8 +31,12 @@ export const SignupPage: FC = () => {
     confirmPassword?: boolean;
   }>({});
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [demoNotice, setDemoNotice] = useState<string | null>(null);
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const validateName = (val: string): string | undefined => {
     if (!val.trim()) {
@@ -145,16 +155,14 @@ export const SignupPage: FC = () => {
     }
 
     setErrors({});
-    setIsSubmitting(true);
     setDemoNotice(null);
 
     try {
-      await authService.signup({ name, email, password });
+      await dispatch(signupUser({ name, email, password })).unwrap();
+      setDemoNotice('Account registration successful.');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Account registration will be available soon.';
+      const message = typeof err === 'string' ? err : 'Account registration will be available soon.';
       setDemoNotice(message);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -187,7 +195,7 @@ export const SignupPage: FC = () => {
               onChange={(e) => handleNameChange(e.target.value)}
               onBlur={() => handleBlur('name')}
               error={touched.name ? errors.name : undefined}
-              disabled={isSubmitting}
+              disabled={isAuthLoading}
               autoComplete="name"
             />
 
@@ -199,7 +207,7 @@ export const SignupPage: FC = () => {
               onChange={(e) => handleEmailChange(e.target.value)}
               onBlur={() => handleBlur('email')}
               error={touched.email ? errors.email : undefined}
-              disabled={isSubmitting}
+              disabled={isAuthLoading}
               autoComplete="email"
             />
 
@@ -211,7 +219,7 @@ export const SignupPage: FC = () => {
               onBlur={() => handleBlur('password')}
               error={touched.password ? errors.password : undefined}
               helperText={!errors.password ? 'Must be at least 8 characters long.' : undefined}
-              disabled={isSubmitting}
+              disabled={isAuthLoading}
               autoComplete="new-password"
             />
 
@@ -222,7 +230,7 @@ export const SignupPage: FC = () => {
               onChange={(e) => handleConfirmPasswordChange(e.target.value)}
               onBlur={() => handleBlur('confirmPassword')}
               error={touched.confirmPassword ? errors.confirmPassword : undefined}
-              disabled={isSubmitting}
+              disabled={isAuthLoading}
               autoComplete="new-password"
             />
 
@@ -230,8 +238,8 @@ export const SignupPage: FC = () => {
               type="submit"
               variant="primary"
               className="w-full mt-2"
-              disabled={!isFormValid || isSubmitting}
-              isLoading={isSubmitting}
+              disabled={!isFormValid || isAuthLoading}
+              isLoading={isAuthLoading}
             >
               Create Account
             </Button>

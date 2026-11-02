@@ -50,3 +50,4 @@ export const applicationAdapter = {
 };
 
 export default applicationAdapter;
+

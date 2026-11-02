@@ -1,6 +1,8 @@
 import type { FC } from 'react';
 import { NavLink } from 'react-router-dom';
 import { primaryNavItems, secondaryNavItems } from './navConfig';
+import { useAppSelector } from '../../store/hooks';
+import { selectCurrentUser } from '../../store/selectors/authSelectors';
 import { mockUser } from '../../data/mockUser';
 
 export interface SidebarProps {
@@ -9,6 +11,9 @@ export interface SidebarProps {
 }
 
 export const Sidebar: FC<SidebarProps> = ({ onNavigate, className = '' }) => {
+  const reduxUser = useAppSelector(selectCurrentUser);
+  const user = reduxUser || mockUser;
+
   return (
     <aside
       className={`w-60 h-full flex flex-col bg-[#FFFFFF] border-r border-[#E5E5E5] select-none ${className}`}
@@ -93,14 +98,14 @@ export const Sidebar: FC<SidebarProps> = ({ onNavigate, className = '' }) => {
       <div className="p-3 border-t border-[#E5E5E5] shrink-0">
         <div className="flex items-center gap-3 px-2 py-2 rounded-md bg-[#FAFAFA] border border-[#E5E5E5]">
           <div className="w-8 h-8 rounded-md bg-[#171717] text-[#FFFFFF] flex items-center justify-center text-[12px] font-medium shrink-0">
-            {mockUser.avatarInitials}
+            {user.avatarInitials}
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-[13px] font-medium text-[#171717] truncate leading-tight">
-              {mockUser.name}
+              {user.name}
             </span>
             <span className="text-[11px] text-[#737373] truncate leading-tight">
-              {mockUser.email}
+              {user.email}
             </span>
           </div>
         </div>

@@ -98,3 +98,4 @@ export const jobAdapter = {
 };
 
 export default jobAdapter;
+

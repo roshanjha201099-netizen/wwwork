@@ -1,38 +1,49 @@
-import { useState, useEffect, type FC } from 'react';
+import type { FC } from 'react';
 import { Link } from 'react-router-dom';
-import { User as UserIcon, Mail, ShieldCheck, Hash, Briefcase, ArrowRight, Calendar } from 'lucide-react';
-import { authService } from '../services/authService';
+import { User as UserIcon, Mail, ShieldCheck, Hash, Briefcase, ArrowRight, Calendar, LogOut } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { selectCurrentUser, selectIsAuthenticated } from '../store/selectors/authSelectors';
+import { logoutUser } from '../store/slices/authSlice';
 import { mockUser } from '../data/mockUser';
-import type { User } from '../types/auth';
 import { useApplications } from '../hooks/useApplications';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Button } from '../components/common';
 
 export const ProfilePage: FC = () => {
+  const dispatch = useAppDispatch();
+  const reduxUser = useAppSelector(selectCurrentUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const { appliedCount } = useApplications();
-  const [currentUser, setCurrentUser] = useState<User>(mockUser);
 
-  useEffect(() => {
-    let isMounted = true;
-    authService.getCurrentUser().then((user) => {
-      if (isMounted && user) {
-        setCurrentUser(user);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  // In mock mode without a real session, fall back to the demo user profile
+  const user = reduxUser || mockUser;
+
+  const handleLogout = () => {
+    dispatch(logoutUser());
+  };
 
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
-      <div className="space-y-1">
-        <h2 className="text-[22px] sm:text-[24px] font-semibold text-[#171717] tracking-tight">
-          User Profile
-        </h2>
-        <p className="text-[13px] text-[#737373]">
-          Account details and application tracking statistics.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-[22px] sm:text-[24px] font-semibold text-[#171717] tracking-tight">
+            User Profile
+          </h2>
+          <p className="text-[13px] text-[#737373]">
+            Account details and application tracking statistics.
+          </p>
+        </div>
+
+        {isAuthenticated && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleLogout}
+            icon={<LogOut size={14} />}
+          >
+            Sign out
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -41,11 +52,11 @@ export const ProfilePage: FC = () => {
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-md bg-[#171717] text-[#FFFFFF] flex items-center justify-center text-[15px] font-bold font-mono shrink-0">
-                {currentUser.avatarInitials}
+                {user.avatarInitials}
               </div>
               <div>
-                <CardTitle>{currentUser.name}</CardTitle>
-                <CardDescription>{currentUser.role || 'Member'}</CardDescription>
+                <CardTitle>{user.name}</CardTitle>
+                <CardDescription>{user.role || 'Member'}</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -57,7 +68,7 @@ export const ProfilePage: FC = () => {
                   <Mail size={14} />
                   <span>Email Address</span>
                 </div>
-                <div className="font-medium text-[#171717]">{currentUser.email}</div>
+                <div className="font-medium text-[#171717]">{user.email}</div>
               </div>
 
               <div className="p-3 border border-[#E5E5E5] rounded-md bg-[#FAFAFA] space-y-1">
@@ -65,7 +76,7 @@ export const ProfilePage: FC = () => {
                   <Hash size={14} />
                   <span>User Identifier</span>
                 </div>
-                <div className="font-mono text-[12px] text-[#171717]">{currentUser.id}</div>
+                <div className="font-mono text-[12px] text-[#171717]">{user.id}</div>
               </div>
 
               <div className="p-3 border border-[#E5E5E5] rounded-md bg-[#FAFAFA] space-y-1">
@@ -75,7 +86,7 @@ export const ProfilePage: FC = () => {
                 </div>
                 <div className="font-medium text-[#171717]">
                   <Badge variant="secondary" className="text-[11px] py-0">
-                    {currentUser.accountType}
+                    {user.accountType}
                   </Badge>
                 </div>
               </div>
@@ -85,7 +96,7 @@ export const ProfilePage: FC = () => {
                   <Calendar size={14} />
                   <span>Member Since</span>
                 </div>
-                <div className="font-medium text-[#171717]">{currentUser.joinedDate || 'Recently'}</div>
+                <div className="font-medium text-[#171717]">{user.joinedDate || 'Recently'}</div>
               </div>
             </div>
           </CardContent>

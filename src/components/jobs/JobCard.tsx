@@ -68,7 +68,7 @@ export const JobCard: FC<JobCardProps> = ({
         onRemoveApplication(job.id);
       }
     } else {
-      applyToJob(job.id);
+      applyToJob(job);
     }
   };
 
