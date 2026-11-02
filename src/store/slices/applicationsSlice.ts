@@ -142,3 +142,4 @@ export const {
 } = applicationsSlice.actions;
 
 export default applicationsSlice.reducer;
+

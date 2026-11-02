@@ -32,3 +32,4 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({ children }) => {
 };
 
 export default ProtectedRoute;
+

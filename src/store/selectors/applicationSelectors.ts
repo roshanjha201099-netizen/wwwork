@@ -33,3 +33,4 @@ export const makeSelectIsJobApplied = (jobId: string) =>
     [selectAppliedJobIds],
     (appliedJobIds) => appliedJobIds.includes(jobId)
   );
+
