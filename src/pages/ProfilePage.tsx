@@ -1,12 +1,27 @@
-import type { FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Mail, ShieldCheck, Hash, Briefcase, ArrowRight, Calendar } from 'lucide-react';
+import { User as UserIcon, Mail, ShieldCheck, Hash, Briefcase, ArrowRight, Calendar } from 'lucide-react';
+import { authService } from '../services/authService';
 import { mockUser } from '../data/mockUser';
+import type { User } from '../types/auth';
 import { useApplications } from '../hooks/useApplications';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Button } from '../components/common';
 
 export const ProfilePage: FC = () => {
   const { appliedCount } = useApplications();
+  const [currentUser, setCurrentUser] = useState<User>(mockUser);
+
+  useEffect(() => {
+    let isMounted = true;
+    authService.getCurrentUser().then((user) => {
+      if (isMounted && user) {
+        setCurrentUser(user);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -26,11 +41,11 @@ export const ProfilePage: FC = () => {
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-md bg-[#171717] text-[#FFFFFF] flex items-center justify-center text-[15px] font-bold font-mono shrink-0">
-                {mockUser.avatarInitials}
+                {currentUser.avatarInitials}
               </div>
               <div>
-                <CardTitle>{mockUser.name}</CardTitle>
-                <CardDescription>{mockUser.role}</CardDescription>
+                <CardTitle>{currentUser.name}</CardTitle>
+                <CardDescription>{currentUser.role || 'Member'}</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -42,7 +57,7 @@ export const ProfilePage: FC = () => {
                   <Mail size={14} />
                   <span>Email Address</span>
                 </div>
-                <div className="font-medium text-[#171717]">{mockUser.email}</div>
+                <div className="font-medium text-[#171717]">{currentUser.email}</div>
               </div>
 
               <div className="p-3 border border-[#E5E5E5] rounded-md bg-[#FAFAFA] space-y-1">
@@ -50,7 +65,7 @@ export const ProfilePage: FC = () => {
                   <Hash size={14} />
                   <span>User Identifier</span>
                 </div>
-                <div className="font-mono text-[12px] text-[#171717]">{mockUser.id}</div>
+                <div className="font-mono text-[12px] text-[#171717]">{currentUser.id}</div>
               </div>
 
               <div className="p-3 border border-[#E5E5E5] rounded-md bg-[#FAFAFA] space-y-1">
@@ -60,7 +75,7 @@ export const ProfilePage: FC = () => {
                 </div>
                 <div className="font-medium text-[#171717]">
                   <Badge variant="secondary" className="text-[11px] py-0">
-                    {mockUser.accountType}
+                    {currentUser.accountType}
                   </Badge>
                 </div>
               </div>
@@ -70,7 +85,7 @@ export const ProfilePage: FC = () => {
                   <Calendar size={14} />
                   <span>Member Since</span>
                 </div>
-                <div className="font-medium text-[#171717]">{mockUser.joinedDate}</div>
+                <div className="font-medium text-[#171717]">{currentUser.joinedDate || 'Recently'}</div>
               </div>
             </div>
           </CardContent>
@@ -112,7 +127,7 @@ export const ProfilePage: FC = () => {
 
       {/* Info notice */}
       <div className="p-3 border border-[#E5E5E5] rounded-md bg-[#FAFAFA] flex items-center gap-2 text-[12px] text-[#737373]">
-        <User size={14} className="text-[#171717] shrink-0" />
+        <UserIcon size={14} className="text-[#171717] shrink-0" />
         <span>Profile editing, password reset, and organization preferences will be unlocked in later phases.</span>
       </div>
     </div>

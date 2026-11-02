@@ -1,7 +1,8 @@
 import type { FC } from 'react';
+import { AlertCircle, RotateCcw } from 'lucide-react';
 import { useJobs } from '../hooks/useJobs';
 import { JobFilters, JobList, JobPagination } from '../components/jobs';
-import { Badge } from '../components/common';
+import { Badge, Button } from '../components/common';
 
 export const DashboardPage: FC = () => {
   const {
@@ -14,6 +15,9 @@ export const DashboardPage: FC = () => {
     filters,
     availableTechnologies,
     hasActiveFilters,
+    isLoading,
+    error,
+    retry,
     setSearch,
     toggleTechnology,
     setDateRange,
@@ -61,22 +65,46 @@ export const DashboardPage: FC = () => {
         onClearFilters={clearFilters}
       />
 
-      {/* Job Cards List */}
-      <JobList
-        jobs={jobs}
-        onClearFilters={hasActiveFilters ? clearFilters : undefined}
-      />
+      {/* Error State */}
+      {error && (
+        <div className="p-4 border border-red-200 bg-red-50/50 rounded-lg text-[13px] text-red-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} className="shrink-0" />
+            <span>{error}</span>
+          </div>
+          <Button size="sm" variant="outline" onClick={retry} icon={<RotateCcw size={12} />}>
+            Retry
+          </Button>
+        </div>
+      )}
 
-      {/* Pagination */}
-      <JobPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalCount={totalJobsCount}
-        pageSize={pageSize}
-        onPageChange={goToPage}
-        onPrevPage={prevPage}
-        onNextPage={nextPage}
-      />
+      {/* Loading State */}
+      {isLoading && (
+        <div className="py-12 text-center text-[13px] text-[#737373] space-y-2">
+          <div className="inline-block w-5 h-5 border-2 border-[#171717] border-t-transparent rounded-full animate-spin" />
+          <p>Loading opportunities...</p>
+        </div>
+      )}
+
+      {/* Job Cards List */}
+      {!isLoading && !error && (
+        <>
+          <JobList
+            jobs={jobs}
+            onClearFilters={hasActiveFilters ? clearFilters : undefined}
+          />
+
+          <JobPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalJobsCount}
+            pageSize={pageSize}
+            onPageChange={goToPage}
+            onPrevPage={prevPage}
+            onNextPage={nextPage}
+          />
+        </>
+      )}
     </div>
   );
 };

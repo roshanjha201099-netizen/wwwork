@@ -1,39 +1,63 @@
 import { useState, useEffect, type FC, type ReactNode } from 'react';
+import { applicationService } from '../services/applicationService';
 import { ApplicationContext } from './applicationContextDef';
 
-const STORAGE_KEY = 'jt_applied_job_ids';
-
 export const ApplicationProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [appliedJobIds, setAppliedJobIds] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          return parsed.filter((id) => typeof id === 'string');
-        }
-      }
-    } catch {
-      // LocalStorage unavailable or parse error; fallback to empty list
-    }
-    return [];
-  });
+  const [appliedJobIds, setAppliedJobIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Sync to localStorage whenever state changes
+  // Hydrate applied jobs on mount via applicationService
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appliedJobIds));
-    } catch {
-      // Ignore write errors (e.g. quota exceeded in private mode)
-    }
-  }, [appliedJobIds]);
+    let isMounted = true;
+    applicationService
+      .getAppliedJobIds()
+      .then((ids) => {
+        if (isMounted) {
+          setAppliedJobIds(ids);
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setIsLoading(false);
+      });
 
-  const applyToJob = (jobId: string) => {
-    setAppliedJobIds((prev) => (prev.includes(jobId) ? prev : [...prev, jobId]));
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const refreshApplications = async () => {
+    setIsLoading(true);
+    try {
+      const ids = await applicationService.getAppliedJobIds();
+      setAppliedJobIds(ids);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const removeApplication = (jobId: string) => {
+  const applyToJob = async (jobId: string) => {
+    // Optimistic UI update
+    setAppliedJobIds((prev) => (prev.includes(jobId) ? prev : [...prev, jobId]));
+    try {
+      await applicationService.applyToJob(jobId);
+    } catch (err) {
+      // Rollback on failure
+      setAppliedJobIds((prev) => prev.filter((id) => id !== jobId));
+      throw err;
+    }
+  };
+
+  const removeApplication = async (jobId: string) => {
+    // Optimistic UI update
     setAppliedJobIds((prev) => prev.filter((id) => id !== jobId));
+    try {
+      await applicationService.removeApplication(jobId);
+    } catch (err) {
+      // Rollback on failure
+      setAppliedJobIds((prev) => (prev.includes(jobId) ? prev : [...prev, jobId]));
+      throw err;
+    }
   };
 
   const isApplied = (jobId: string) => {
@@ -48,6 +72,8 @@ export const ApplicationProvider: FC<{ children: ReactNode }> = ({ children }) =
         removeApplication,
         isApplied,
         appliedCount: appliedJobIds.length,
+        isLoading,
+        refreshApplications,
       }}
     >
       {children}

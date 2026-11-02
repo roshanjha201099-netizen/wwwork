@@ -1,5 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
-import { mockJobs } from '../data/mockJobs';
+import { useState, useEffect, useCallback, useTransition } from 'react';
 import { jobService } from '../services/jobService';
 import type { Job, JobFiltersState, DateFilterOption, ExperienceLevel } from '../types/job';
 
@@ -13,27 +12,103 @@ const initialFilters: JobFiltersState = {
 };
 
 export function useJobs(initialPageSize = DEFAULT_PAGE_SIZE) {
-  const [allJobs] = useState<Job[]>(mockJobs);
-  const [filters, setFilters] = useState<JobFiltersState>(initialFilters);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [totalJobsCount, setTotalJobsCount] = useState<number>(0);
+  const [catalogTotalCount, setCatalogTotalCount] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = initialPageSize;
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [availableTechnologies, setAvailableTechnologies] = useState<string[]>([]);
 
-  // Filter jobs based on current filter state
-  const filteredJobs = useMemo(() => {
-    return jobService.filterJobs(allJobs, filters);
-  }, [allJobs, filters]);
+  const [filters, setFilters] = useState<JobFiltersState>(initialFilters);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Total pages
-  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
+  const [, startTransition] = useTransition();
 
-  // Ensure current page does not exceed total pages when filter shrinks results
-  const safeCurrentPage = Math.min(currentPage, totalPages);
+  // Load available technologies on mount via service
+  useEffect(() => {
+    let isMounted = true;
+    jobService
+      .getUniqueTechnologies()
+      .then((techs) => {
+        if (isMounted) setAvailableTechnologies(techs);
+      })
+      .catch(() => {
+        // Non-critical; fallback to empty list
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-  // Paginated slice
-  const paginatedJobs = useMemo(() => {
-    const startIndex = (safeCurrentPage - 1) * pageSize;
-    return filteredJobs.slice(startIndex, startIndex + pageSize);
-  }, [filteredJobs, safeCurrentPage, pageSize]);
+  // Fetch jobs whenever filters or pagination changes
+  useEffect(() => {
+    let isMounted = true;
+
+    jobService
+      .getJobs({
+        page: currentPage,
+        pageSize: initialPageSize,
+        search: filters.search,
+        technologies: filters.technologies,
+        dateRange: filters.dateRange,
+        experienceLevel: filters.experienceLevel,
+      })
+      .then((response) => {
+        if (isMounted) {
+          startTransition(() => {
+            setJobs(response.jobs);
+            setTotalJobsCount(response.total);
+            setTotalPages(response.totalPages);
+
+            const hasFilters =
+              Boolean(filters.search.trim()) ||
+              filters.technologies.length > 0 ||
+              filters.dateRange !== 'all' ||
+              filters.experienceLevel !== 'all';
+
+            if (!hasFilters) {
+              setCatalogTotalCount(response.total);
+            }
+          });
+          setIsLoading(false);
+          setError(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (isMounted) {
+          const message = err instanceof Error ? err.message : 'Failed to fetch job opportunities.';
+          setError(message);
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentPage, initialPageSize, filters]);
+
+  const retry = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await jobService.getJobs({
+        page: currentPage,
+        pageSize: initialPageSize,
+        search: filters.search,
+        technologies: filters.technologies,
+        dateRange: filters.dateRange,
+        experienceLevel: filters.experienceLevel,
+      });
+      setJobs(response.jobs);
+      setTotalJobsCount(response.total);
+      setTotalPages(response.totalPages);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch job opportunities.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, initialPageSize, filters]);
 
   // Set search query and reset pagination to page 1
   const setSearch = useCallback((search: string) => {
@@ -84,11 +159,6 @@ export function useJobs(initialPageSize = DEFAULT_PAGE_SIZE) {
     setCurrentPage((prev) => Math.max(prev - 1, 1));
   }, []);
 
-  // All unique available tech stack options
-  const availableTechnologies = useMemo(() => {
-    return jobService.getUniqueTechnologies();
-  }, []);
-
   const hasActiveFilters =
     Boolean(filters.search.trim()) ||
     filters.technologies.length > 0 ||
@@ -96,16 +166,18 @@ export function useJobs(initialPageSize = DEFAULT_PAGE_SIZE) {
     filters.experienceLevel !== 'all';
 
   return {
-    jobs: paginatedJobs,
-    allFilteredJobs: filteredJobs,
-    totalJobsCount: filteredJobs.length,
-    catalogTotalCount: allJobs.length,
-    currentPage: safeCurrentPage,
+    jobs,
+    totalJobsCount,
+    catalogTotalCount: catalogTotalCount || totalJobsCount,
+    currentPage,
     totalPages,
-    pageSize,
+    pageSize: initialPageSize,
     filters,
     availableTechnologies,
     hasActiveFilters,
+    isLoading,
+    error,
+    retry,
     setSearch,
     toggleTechnology,
     setDateRange,
@@ -118,4 +190,3 @@ export function useJobs(initialPageSize = DEFAULT_PAGE_SIZE) {
 }
 
 export default useJobs;
-

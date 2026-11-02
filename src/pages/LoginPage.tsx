@@ -1,6 +1,7 @@
 import { useState, type FC, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Info } from 'lucide-react';
+import { authService } from '../services/authService';
 import { AuthLayout, PasswordInput } from '../components/auth';
 import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common';
 
@@ -56,7 +57,7 @@ export const LoginPage: FC = () => {
 
   const isFormValid = !validateEmail(email) && !validatePassword(password);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setTouched({ email: true, password: true });
 
@@ -72,11 +73,14 @@ export const LoginPage: FC = () => {
     setIsSubmitting(true);
     setDemoNotice(null);
 
-    // Demonstrate frontend behavior per Phase 3.1 specifications
-    setTimeout(() => {
+    try {
+      await authService.login({ email, password });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Authentication integration is coming soon.';
+      setDemoNotice(message);
+    } finally {
       setIsSubmitting(false);
-      setDemoNotice('Authentication integration is coming soon.');
-    }, 500);
+    }
   };
 
   return (

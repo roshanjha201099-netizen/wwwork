@@ -21,3 +21,19 @@ export interface JobFiltersState {
   experienceLevel: ExperienceLevel | 'all';
 }
 
+export interface JobSearchParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  technologies?: string[];
+  dateRange?: DateFilterOption;
+  experienceLevel?: ExperienceLevel | 'all';
+}
+
+export interface JobListResponse {
+  jobs: Job[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
