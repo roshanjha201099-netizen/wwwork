@@ -147,11 +147,11 @@ export const SignupPage: FC = () => {
     setIsSubmitting(true);
     setDemoNotice(null);
 
-    // Demonstrate frontend interaction (no API / no redirect per Phase 3 specifications)
+    // Demonstrate frontend behavior per Phase 3.1 specifications
     setTimeout(() => {
       setIsSubmitting(false);
-      setDemoNotice('Account creation and session integration will be implemented in Phase 4.');
-    }, 600);
+      setDemoNotice('Account registration will be available soon.');
+    }, 500);
   };
 
   return (

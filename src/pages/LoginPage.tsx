@@ -72,11 +72,11 @@ export const LoginPage: FC = () => {
     setIsSubmitting(true);
     setDemoNotice(null);
 
-    // Demonstrate frontend interaction (no API / no redirect per Phase 3 specifications)
+    // Demonstrate frontend behavior per Phase 3.1 specifications
     setTimeout(() => {
       setIsSubmitting(false);
-      setDemoNotice('Authentication and session integration will be implemented in Phase 4.');
-    }, 600);
+      setDemoNotice('Authentication integration is coming soon.');
+    }, 500);
   };
 
   return (

@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import { NavLink } from 'react-router-dom';
 import { primaryNavItems, secondaryNavItems } from './navConfig';
+import { mockUser } from '../../data/mockUser';
 
 export interface SidebarProps {
   onNavigate?: () => void;
@@ -58,7 +59,7 @@ export const Sidebar: FC<SidebarProps> = ({ onNavigate, className = '' }) => {
           </nav>
         </div>
 
-        {/* Design System Preview Navigation */}
+        {/* Developer Navigation */}
         <div className="space-y-1 pt-2 border-t border-[#E5E5E5]">
           <p className="px-2 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-[#A3A3A3]">
             Developer
@@ -92,14 +93,14 @@ export const Sidebar: FC<SidebarProps> = ({ onNavigate, className = '' }) => {
       <div className="p-3 border-t border-[#E5E5E5] shrink-0">
         <div className="flex items-center gap-3 px-2 py-2 rounded-md bg-[#FAFAFA] border border-[#E5E5E5]">
           <div className="w-8 h-8 rounded-md bg-[#171717] text-[#FFFFFF] flex items-center justify-center text-[12px] font-medium shrink-0">
-            JD
+            {mockUser.avatarInitials}
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-[13px] font-medium text-[#171717] truncate leading-tight">
-              Jane Doe
+              {mockUser.name}
             </span>
             <span className="text-[11px] text-[#737373] truncate leading-tight">
-              jane.doe@company.internal
+              {mockUser.email}
             </span>
           </div>
         </div>
@@ -109,4 +110,3 @@ export const Sidebar: FC<SidebarProps> = ({ onNavigate, className = '' }) => {
 };
 
 export default Sidebar;
-

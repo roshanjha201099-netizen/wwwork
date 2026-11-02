@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { getPageTitle } from './navConfig';
+import { mockUser } from '../../data/mockUser';
 
 export interface HeaderProps {
   onMenuClick?: () => void;
@@ -33,10 +34,10 @@ export const Header: FC<HeaderProps> = ({ onMenuClick }) => {
       {/* Right side avatar / initials */}
       <div className="flex items-center gap-2">
         <div
-          title="Jane Doe (jane.doe@company.internal)"
-          className="w-8 h-8 rounded-md bg-[#171717] text-[#FFFFFF] flex items-center justify-center text-[12px] font-medium select-none cursor-default"
+          title={`${mockUser.name} (${mockUser.email})`}
+          className="w-8 h-8 rounded-md bg-[#171717] text-[#FFFFFF] flex items-center justify-center text-[12px] font-medium select-none cursor-default font-mono"
         >
-          JD
+          {mockUser.avatarInitials}
         </div>
       </div>
     </header>

@@ -42,3 +42,4 @@ export const AuthLayout: FC<AuthLayoutProps> = ({ children }) => {
 };
 
 export default AuthLayout;
+

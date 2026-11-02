@@ -1,41 +1,84 @@
 import type { FC } from 'react';
-import { LayoutDashboard } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Badge } from '../components/common';
+import { useJobs } from '../hooks/useJobs';
+import { JobFilters, JobList, JobPagination } from '../components/jobs';
+import { Badge } from '../components/common';
 
 export const DashboardPage: FC = () => {
+  const {
+    jobs,
+    totalJobsCount,
+    catalogTotalCount,
+    currentPage,
+    totalPages,
+    pageSize,
+    filters,
+    availableTechnologies,
+    hasActiveFilters,
+    setSearch,
+    toggleTechnology,
+    setDateRange,
+    setExperienceLevel,
+    clearFilters,
+    goToPage,
+    nextPage,
+    prevPage,
+  } = useJobs(10);
+
   return (
     <div className="space-y-6">
+      {/* Header Section */}
       <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[22px] sm:text-[24px] font-semibold text-[#171717] tracking-tight">
-            Overview
-          </h2>
-          <Badge variant="secondary">Phase 2</Badge>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-[22px] sm:text-[24px] font-semibold text-[#171717] tracking-tight">
+              Job Opportunities
+            </h2>
+            <Badge variant="secondary" className="font-mono text-[12px]">
+              {totalJobsCount} {totalJobsCount === 1 ? 'role' : 'roles'}
+            </Badge>
+          </div>
+          {catalogTotalCount !== totalJobsCount && (
+            <span className="text-[12px] text-[#737373]">
+              Filtered from {catalogTotalCount} total listings
+            </span>
+          )}
         </div>
         <p className="text-[13px] text-[#737373]">
-          This is the jobs dashboard placeholder.
+          Discover and track opportunities that match your skills.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <LayoutDashboard size={18} className="text-[#171717]" />
-            <CardTitle>Jobs Dashboard</CardTitle>
-          </div>
-          <CardDescription>
-            Pipeline metrics, recent job listings, and application tracking will be integrated in Phase 3.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="py-8 text-center text-[#737373] text-[13px] border border-dashed border-[#E5E5E5] rounded-md bg-[#FAFAFA]">
-            Dashboard view scheduled for subsequent phase implementation.
-          </div>
-        </CardContent>
-      </Card>
+      {/* Search and Filters */}
+      <JobFilters
+        filters={filters}
+        availableTechnologies={availableTechnologies}
+        hasActiveFilters={hasActiveFilters}
+        totalResults={totalJobsCount}
+        onSearchChange={setSearch}
+        onToggleTechnology={toggleTechnology}
+        onDateRangeChange={setDateRange}
+        onExperienceChange={setExperienceLevel}
+        onClearFilters={clearFilters}
+      />
+
+      {/* Job Cards List */}
+      <JobList
+        jobs={jobs}
+        onClearFilters={hasActiveFilters ? clearFilters : undefined}
+      />
+
+      {/* Pagination */}
+      <JobPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={totalJobsCount}
+        pageSize={pageSize}
+        onPageChange={goToPage}
+        onPrevPage={prevPage}
+        onNextPage={nextPage}
+      />
     </div>
   );
 };
 
 export default DashboardPage;
-
